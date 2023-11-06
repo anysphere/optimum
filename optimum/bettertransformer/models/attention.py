@@ -643,13 +643,18 @@ def llama_forward(
 
     if bsz == 1 or self.training:
         # BEWARE: at this stage, attention_mask is not the same as in transformers llama
+        if attention_mask is not None:
+            if attention_mask.size() != (bsz, 1, q_len, kv_seq_len):
+                raise ValueError(
+                    f"Attention mask should be of size {(bsz, 1, q_len, kv_seq_len)}, but is {attention_mask.size()}"
+                )
         if query_states.shape[2] > 1:
             attn_output = torch.nn.functional.scaled_dot_product_attention(
-                query_states, key_states, value_states, attn_mask=None, dropout_p=0.0, is_causal=True
+                query_states, key_states, value_states, attn_mask=attention_mask, dropout_p=0.0, is_causal=True
             )
         else:
             attn_output = torch.nn.functional.scaled_dot_product_attention(
-                query_states, key_states, value_states, attn_mask=None, dropout_p=0.0, is_causal=False
+                query_states, key_states, value_states, attn_mask=attention_mask, dropout_p=0.0, is_causal=False
             )
     else:
         # At this stage, **attention_mask is the same** as in transformers llama
